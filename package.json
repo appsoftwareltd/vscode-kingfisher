@@ -1,0 +1,66 @@
+{
+    "name": "vscode-kingfisher",
+    "displayName": "VS Code Kingfisher",
+    "description": "Subtly colour your VS Code status bar per workspace — just for you. Identify multiple VS Code windows at a glance without polluting shared settings.",
+    "version": "0.1.0",
+    "publisher": "appsoftwareltd",
+    "license": "Elastic-2.0",
+    "icon": "images/icon.png",
+    "homepage": "https://github.com/appsoftwareltd/vscode-kingfisher",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/appsoftwareltd/vscode-kingfisher.git"
+    },
+    "bugs": {
+        "url": "https://github.com/appsoftwareltd/vscode-kingfisher/issues"
+    },
+    "keywords": [
+        "statusbar",
+        "color",
+        "colour",
+        "peacock",
+        "window",
+        "identity"
+    ],
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "galleryBanner": {
+        "color": "#1e1e2e",
+        "theme": "dark"
+    },
+    "activationEvents": [
+        "*"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "kingfisher.setColour",
+                "title": "Kingfisher: Set Status Bar Colour"
+            },
+            {
+                "command": "kingfisher.clearColour",
+                "title": "Kingfisher: Clear Status Bar Colour"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run build",
+        "build": "node build.mjs",
+        "watch": "node build.mjs --watch",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.0",
+        "@types/vscode": "^1.85.0",
+        "esbuild": "^0.24.0",
+        "typescript": "^5.7.0",
+        "vitest": "^3.0.0"
+    }
+}

@@ -1,5 +1,7 @@
 # Kingfisher
 
+[Kingfisher on VS Marketplace](https://marketplace.visualstudio.com/manage/publishers/appsoftwareltd/extensions/vscode-kingfisher/hub)
+
 > Subtly change the color of your Visual Studio Code workspace (JUST FOR YOU). Ideal when you have multiple VS Code instances, use VS Live Share, or use VS Code's Remote features, and you want to quickly identify your editor (AND YOU DON'T WANT TO SHARE THE SETTING WITH THE WHOLE TEAM!).
 
 Sorry [vscode-peacock](https://github.com/johnpapa/vscode-peacock), I was excited to discover this extension but this [issue](https://github.com/johnpapa/vscode-peacock/issues/7), needed addressing. Teams often share `.vscode/settings.json`, so we can't set editor colours in there. I concede that the approach here has trade-offs (this extension cannot apply colours while it's not the active editor, so previewing windows via `Alt + Tab` will not see colours applied except for the active editor).

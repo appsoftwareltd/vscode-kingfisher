@@ -2,7 +2,7 @@
     "name": "vscode-kingfisher",
     "displayName": "VS Code Kingfisher",
     "description": "Subtly colour your VS Code status bar per workspace — just for you. Identify multiple VS Code windows at a glance without polluting shared settings.",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "publisher": "appsoftwareltd",
     "license": "Elastic-2.0",
     "icon": "images/kingfisher-icon-128x128.png",
@@ -40,11 +40,11 @@
         "commands": [
             {
                 "command": "kingfisher.setColour",
-                "title": "Kingfisher: Set Status Bar Colour"
+                "title": "Kingfisher: Set Title and Status Bar Colour"
             },
             {
                 "command": "kingfisher.clearColour",
-                "title": "Kingfisher: Clear Status Bar Colour"
+                "title": "Kingfisher: Clear Title and Status Bar Colour"
             }
         ]
     },

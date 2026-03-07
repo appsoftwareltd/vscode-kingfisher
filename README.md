@@ -2,9 +2,11 @@
 
 [VS Code Kingfisher on VS Marketplace](https://marketplace.visualstudio.com/items?itemName=AppSoftwareLtd.vscode-kingfisher)
 
-> Subtly change the color of your Visual Studio Code workspace (JUST FOR YOU). Ideal when you have multiple VS Code instances, use VS Live Share, or use VS Code's Remote features, and you want to quickly identify your editor (AND YOU DON'T WANT TO SHARE THE SETTING WITH THE WHOLE TEAM!).
+> Subtly change the color of your Visual Studio Code workspace [JUST FOR YOU[]. Ideal when you have multiple VS Code instances, use VS Live Share, or use VS Code's Remote features, and you want to quickly identify your editor [AND YOU DON'T WANT TO SHARE THE SETTING WITH THE WHOLE TEAM!].
 
-Sorry [vscode-peacock](https://github.com/johnpapa/vscode-peacock), I was excited to discover this extension but this [issue](https://github.com/johnpapa/vscode-peacock/issues/7), needed addressing. Teams often share `.vscode/settings.json`, so we can't set editor colours in there. I concede that the approach here has trade-offs (this extension cannot apply colours while it's not the active editor, so previewing windows via `Alt + Tab` will not see colours applied except for the active editor).
+I was excited to discover the [vscode-peacock](https://github.com/johnpapa/vscode-peacock) extension, to help me identify VS Code instances when juggling multiple work streams, but (for me at least) this [issue](https://github.com/johnpapa/vscode-peacock/issues/7) whereby Peacock can only work by modifying the workspace `.vscode/settings.json`, stopped me from using Peacock. Teams often share settings common to all devs in this file, so we can't set editor colours (which are very much a personal preference) in there. 
+
+**Kingfisher's approach has a trade-off - this extension cannot apply VS Code instance specific colours while it's not the active editor, so previewing windows via `Alt + Tab` shows all instances with the last active instance colouring. As soon as you activate a Kingfisher extension managed instance, the correct colour will be applied.**
 
 ## Why "Kingfisher"? 
 
@@ -24,7 +26,9 @@ Kingfisher stores your chosen colour privately per workspace (in VS Code's inter
 
 ### Multi-window behaviour
 
-Because VS Code's `workbench.colorCustomizations` is a global user setting shared by all open windows, the **focused** window always shows its correct colour. Other windows visible in `Alt+Tab` may display the last-focused window's colour until they gain focus themselves. This is a VS Code API limitation — there is currently no runtime API to apply per-window colours independently.
+**This is the caveat:** Because VS Code's `workbench.colorCustomizations` is a global user setting shared by all open windows, the **focused** window always shows its correct colour. Other windows visible in `Alt+Tab` may display the last-focused window's colour until they gain focus themselves. This is a VS Code API limitation — there is currently no runtime API to apply per-window colours independently.
+
+> If this is not acceptable behaviour, and you don't adding colour customisations in `.vscode/settings.json` Peacock is likely a better solution for you. 
 
 ---
 
@@ -32,8 +36,8 @@ Because VS Code's `workbench.colorCustomizations` is a global user setting share
 
 | Command | Description |
 |---|---|
-| **Kingfisher: Set Status Bar Colour** | Choose from presets or enter a custom hex value (#rrggbb) |
-| **Kingfisher: Clear Status Bar Colour** | Restore the default theme status bar colour for this workspace |
+| **Kingfisher: Set Title and Status Bar Colour** | Choose from presets or enter a custom hex value (#rrggbb) |
+| **Kingfisher: Clear Title and Status Bar Colour** | Restore the default theme status bar colour for this workspace |
 
 Open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and search for "Kingfisher".
 
@@ -67,6 +71,41 @@ Because VS Code's `workbench.colorCustomizations` is a global user setting share
 Open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and search for "Kingfisher".
 
 You can also click the Kingfisher indicator in the status bar to open the colour picker.
+
+---
+
+## Moving from VS Code Peacock
+
+If you have VS Code Peacock settings, or `workbench.colorCustomizations` in `.vscode/settings.json`, you may want to remove them to ensure that this extension works as it should.
+
+```json
+"workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#0057b3",
+    "activityBar.background": "#0057b3",
+    "activityBar.foreground": "#e7e7e7",
+    "activityBar.inactiveForeground": "#e7e7e799",
+    "activityBarBadge.background": "#ff409d",
+    "activityBarBadge.foreground": "#15202b",
+    "commandCenter.border": "#e7e7e799",
+    "sash.hoverBorder": "#0057b3",
+    "statusBar.background": "#003e80",
+    "statusBar.foreground": "#e7e7e7",
+    "statusBarItem.hoverBackground": "#0057b3",
+    "statusBarItem.remoteBackground": "#003e80",
+    "statusBarItem.remoteForeground": "#e7e7e7",
+    "titleBar.activeBackground": "#003e80",
+    "titleBar.activeForeground": "#e7e7e7",
+    "titleBar.inactiveBackground": "#003e8099",
+    "titleBar.inactiveForeground": "#e7e7e799"
+},
+"peacock.color": "#003e80"
+```
+
+You may also need to clean up user settings:
+
+- Windows:  `%APPDATA%\Code\User\settings.json`
+- macOS:	`$HOME/Library/Application Support/Code/User/settings.json`
+- Linux:	`$HOME/.config/Code/User/settings.json`
 
 ---
 

@@ -2,9 +2,10 @@
     "name": "vscode-kingfisher",
     "displayName": "VS Code Kingfisher",
     "description": "Subtly colour your VS Code status bar per workspace — just for you. Identify multiple VS Code windows at a glance without polluting shared settings.",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "publisher": "appsoftwareltd",
     "license": "Elastic-2.0",
+    "icon": "images/kingfisher-icon-128x128.png",
     "homepage": "https://github.com/appsoftwareltd/vscode-kingfisher",
     "repository": {
         "type": "git",

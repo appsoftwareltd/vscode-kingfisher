@@ -272,3 +272,99 @@ Would you like me to extend Kingfisher to also colour the title bar?
 [user]:
 
 [user]: yes
+
+[user]: Can we add a colour picker as well as the add custom hex colour command option?
+
+[agent]: VS Code doesn't have a built-in colour picker dialog in its extension API — there's no `showColorPicker()`. So to add a real colour picker, we'd need a **WebviewPanel** with an HTML `<input type="color">` element. That gives the native OS colour picker (the same one you'd get in a browser). Here's how the options break down:
+
+**Option A — WebviewPanel with `<input type="color">`**
+- Opens a small VS Code panel containing an HTML colour wheel/picker (native OS dialog via `<input type="color">`)
+- User picks a colour, clicks "Apply", message is posted back to the extension via `panel.webview.onDidReceiveMessage`
+- Reasonably clean but adds a webview lifecycle to manage (create, dispose, focus)
+- The OS colour picker (Windows: colour dialog; macOS: colour wheel) is what users expect from a "colour picker"
+
+**Option B — Inline hex input with live preview (current approach, enhanced)**
+- Keep the existing `showInputBox` for custom hex but add display of the current colour swatch in the QuickPick list
+- Not a true colour picker but low complexity — users comfortable with hex values might prefer this
+
+**Option C — Third-party colour picker in a webview**
+- Embed a library like `react-colorful` or vanilla `iro.js` in a webview for a richer UI
+- Heavier — requires bundling the picker library into the extension
+- More complex to implement and test
+
+**My recommendation: Option A.** It's the right trade-off — a genuine colour picker without significant complexity overhead. The webview would be minimal: a single HTML file with `<input type="color">` and an "Apply" button. 
+
+The flow would be:
+1. User runs "Set Colour" command → QuickPick appears with presets + "Custom colour picker…" option
+2. Selecting "Custom colour picker…" opens a small WebviewPanel
+3. The webview pre-populates the colour input with the current colour (if any)
+4. User picks a colour, clicks Apply → extension receives the hex value, applies and saves it
+5. Panel disposes itself
+
+The existing "Custom hex colour…" option could remain alongside it (some users prefer typing hex directly), or be replaced by the picker — your call.
+
+Shall I plan this out fully, or do you have a preference between these options / any refinements?
+
+[user]: Can we have option A and B?
+
+[agent]: Yes, both can coexist cleanly. The QuickPick would offer:
+
+1. **Preset colours** (existing 8 swatches)
+2. **$(paintcan) Colour picker…** — opens the WebviewPanel with `<input type="color">`
+3. **$(edit) Enter hex value…** — opens the existing `showInputBox`
+4. **$(trash) Clear colour** (if a colour is currently set)
+
+The WebviewPanel will be a minimal self-contained HTML page — no external dependencies, no bundled libraries. It pre-fills with the current colour, shows a large `<input type="color">` swatch, and has an Apply button. On Apply, it posts the hex value back and the panel closes itself. A cancel/close just disposes the panel with no changes.
+
+The hex input box stays exactly as it is now. Both routes converge on the same `persistAndApply` function so the rest of the extension is unchanged.
+
+**Changes needed:**
+- `src/extension.ts` — add "Colour picker…" option to QuickPick, add `handleColourPicker()` function that creates/manages the WebviewPanel
+- `src/ColourPickerPanel.ts` — new file: encapsulates the WebviewPanel lifecycle (create, receive message, dispose)
+- No changes to `ColourService.ts`, tests, or `package.json`
+
+Shall I add this to the todo list and implement?
+
+[user]: Regarding the "all vscode instances get the active editor colour issue here" could the extension in the non active editor reset the colour to default for the non active instances?
+
+[agent]: Yes — and this is actually a meaningful improvement worth implementing. The `onDidChangeWindowState` event already fires for both focus gain (`state.focused = true`) **and focus loss** (`state.focused = false`). We're currently only acting on focus gain. If we also act on focus loss by calling `clearColour()`, the behaviour becomes:
+
+- **Window A focused** → applies colour A (all windows show colour A)
+- **User switches to Window B:**
+  1. Window A fires blur → clears colour (all windows briefly show default)
+  2. Window B fires focus → applies colour B (all windows show colour B)
+- **Result:** non-focused VS Code windows show no custom colour; the focused window shows its colour
+
+**For Alt+Tab:** This is a significant improvement. The static thumbnails would show the current VS Code window (or whichever had focus when you pressed Alt+Tab) with its colour, and all other VS Code windows with default colours. You can now visually distinguish "the one I'm in" from "the others" without clicking.
+
+**Trade-offs:**
+- When you switch to a non-VS Code app (browser, terminal), your VS Code window fires a blur and clears its colour. While you're in Chrome, VS Code shows no colour. On returning to VS Code, the colour snaps back on focus. Likely fine — you'd only care about VS Code colours while in VS Code.
+- There's a brief (~millisecond) flash to default when switching *between* VS Code windows. Practically imperceptible.
+- If you only have one VS Code window open, the behaviour is unchanged (it gains focus on activation, colours apply, and clears would only happen when you leave VS Code entirely — which is correct).
+
+**Implementation is tiny:** in `extension.ts`, the `onDidChangeWindowState` handler already exists. Currently:
+```ts
+if (state.focused) { applyColour(...) }
+```
+Change to:
+```ts
+if (state.focused) { applyColour(...) } else { clearColour() }
+```
+
+This is a one-line change to the event handler with no architectural changes.
+
+**Recommendation:** Yes, implement this. It makes Kingfisher genuinely more useful in the multi-window case at essentially zero cost.
+
+[user]: Apply both this change and the colour picker options selected
+
+[agent]: Plan for Iteration 3:
+
+**Feature 1 — Window blur → clear colour (1-line change)**
+- In `extension.ts` `onDidChangeWindowState` handler: add `else { clearColour().catch(logError); }` so non-focused VS Code windows revert to the default theme colour. Alt+Tab will now show: active window = its colour, all other VS Code windows = default.
+
+**Feature 2 — Colour picker WebviewPanel**
+- New `src/ColourPickerPanel.ts`: `showColourPicker(context, currentColour, onApply)` function that creates a `WebviewPanel` containing a minimal HTML page. Uses a nonce-based CSP for security. Renders a large `<input type="color">` pre-filled with the current colour, a hex label that updates live, and Apply/Cancel buttons. `postMessage` sends `{ command: 'apply', colour }` back to the extension; panel disposes on either action.
+- `extension.ts`: Add `$(paintcan) Colour picker…` QuickPick option (between presets and hex input), handled by calling `showColourPicker`. The existing hex input box is retained unchanged. Both converge on `persistAndApply`.
+- No changes to `ColourService.ts` or existing tests.
+
+[user]: 

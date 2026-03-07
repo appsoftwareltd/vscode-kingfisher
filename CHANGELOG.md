@@ -6,6 +6,13 @@ All notable changes to AS Notes will be documented here.
 
 ### Added
 
+## [0.1.4] - 2026-03-07
+
+### Added
+
+- Change in-active window colour behaviour.
+- Added a colour picker.
+
 ## [0.1.3] - 2026-03-07
 
 ### Added

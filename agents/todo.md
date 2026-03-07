@@ -17,3 +17,11 @@
 - [x] Add `dimColour` utility + tests (inactive title bar)
 - [x] Verify build and all tests pass
 - [x] Update TECHNICAL.md
+
+## Iteration 3 — Window blur + Colour picker
+
+- [x] Handle window blur → clearColour() in onDidChangeWindowState (extension.ts)
+- [x] Create src/ColourPickerPanel.ts with WebviewPanel, nonce CSP, input[type=color], Apply/Cancel
+- [x] Add $(paintcan) Colour picker option to QuickPick in extension.ts
+- [x] Verify build and all tests pass
+- [x] Update README.md and TECHNICAL.md

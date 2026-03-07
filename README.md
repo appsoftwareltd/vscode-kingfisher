@@ -6,7 +6,7 @@
 
 I was excited to discover the [vscode-peacock](https://github.com/johnpapa/vscode-peacock) extension, to help me identify VS Code instances when juggling multiple work streams, but (for me at least) this [issue](https://github.com/johnpapa/vscode-peacock/issues/7) whereby Peacock can only work by modifying the workspace `.vscode/settings.json`, stopped me from using Peacock. Teams often share settings common to all devs in this file, so we can't set editor colours (which are very much a personal preference) in there. 
 
-**Kingfisher's approach has a trade-off - this extension cannot apply VS Code instance specific colours while it's not the active editor, so previewing windows via `Alt + Tab` shows all instances with the last active instance colouring. As soon as you activate a Kingfisher extension managed instance, the correct colour will be applied.**
+**Kingfisher's approach has a trade-off** — because VS Code's `workbench.colorCustomizations` is a global user setting, all open VS Code windows share the same colour at any moment. Kingfisher mitigates this: when a window **gains focus** it applies its colour, and when it **loses focus** it clears the colour back to your theme default. The result in Alt+Tab: the currently active window shows its colour; all other VS Code windows show the default theme. As soon as you activate any Kingfisher-managed window, the correct colour appears instantly.
 
 ## Why "Kingfisher"? 
 
@@ -26,9 +26,13 @@ Kingfisher stores your chosen colour privately per workspace (in VS Code's inter
 
 ### Multi-window behaviour
 
-**This is the caveat:** Because VS Code's `workbench.colorCustomizations` is a global user setting shared by all open windows, the **focused** window always shows its correct colour. Other windows visible in `Alt+Tab` may display the last-focused window's colour until they gain focus themselves. This is a VS Code API limitation — there is currently no runtime API to apply per-window colours independently.
+When a VS Code window **gains focus**, Kingfisher applies its workspace colour. When the window **loses focus**, Kingfisher clears the colour back to the theme default. This means:
 
-> If this is not acceptable behaviour, and you don't adding colour customisations in `.vscode/settings.json` Peacock is likely a better solution for you. 
+- **Active / focused window** → shows its Kingfisher colour
+- **Other VS Code windows in Alt+Tab** → show the default theme colour
+- Switching to a VS Code window immediately applies that window's saved colour
+
+> If you need simultaneous per-window colouring (all windows coloured differently at the same time), consider [vscode-peacock](https://github.com/johnpapa/vscode-peacock) — it uses `.vscode/settings.json` per workspace which does support that, at the cost of polluting shared config.
 
 ---
 
@@ -36,8 +40,8 @@ Kingfisher stores your chosen colour privately per workspace (in VS Code's inter
 
 | Command | Description |
 |---|---|
-| **Kingfisher: Set Title and Status Bar Colour** | Choose from presets or enter a custom hex value (#rrggbb) |
-| **Kingfisher: Clear Title and Status Bar Colour** | Restore the default theme status bar colour for this workspace |
+| **Kingfisher: Set Title and Status Bar Colour** | Choose from presets, use the colour picker, or enter a custom hex value (#rrggbb) |
+| **Kingfisher: Clear Title and Status Bar Colour** | Restore the default theme colours for this workspace |
 
 Open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and search for "Kingfisher".
 
@@ -48,31 +52,6 @@ You can also click the Kingfisher indicator in the status bar to open the colour
 ## Requirements
 
 - VS Code 1.85.0 or later
-
----
-
-## How it works
-
-Kingfisher stores your chosen colour privately per workspace (in VS Code's internal extension storage — never written to any file tracked by version control). When a VS Code window gains focus, Kingfisher applies the saved colour to `workbench.colorCustomizations` in your **personal user settings** (`%APPDATA%\Code\User\settings.json` on Windows, `~/.config/Code/User/settings.json` on Linux/macOS). This file is personal and machine-level — never committed to a repository.
-
-### Multi-window behaviour
-
-Because VS Code's `workbench.colorCustomizations` is a global user setting shared by all open windows, the **focused** window always shows its correct colour. Other windows visible in Alt+Tab may display the last-focused window's colour until they gain focus themselves. This is a VS Code API limitation — there is currently no runtime API to apply per-window colours independently.
-
----
-
-## Commands
-
-| Command | Description |
-|---|---|
-| **Kingfisher: Set Status Bar Colour** | Choose from presets or enter a custom hex value (#rrggbb) |
-| **Kingfisher: Clear Status Bar Colour** | Restore the default theme status bar colour for this workspace |
-
-Open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and search for "Kingfisher".
-
-You can also click the Kingfisher indicator in the status bar to open the colour picker.
-
----
 
 ## Moving from VS Code Peacock
 
@@ -136,8 +115,8 @@ npx @vscode/vsce publish
 
 ```bash
 git add package.json CHANGELOG.md README.md
-git commit -m "Release v0.x.x"   # change version
-git tag v0.x.x                   # change version
+git commit -m "Release v0.1.4"   # change version
+git tag v0.1.4                  # change version
 git push origin main --tags
 ```
 

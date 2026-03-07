@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { showColourPicker } from './ColourPickerPanel.js';
 import {
     isValidHex,
     applyColour,
@@ -35,7 +36,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }
     statusBarItem.show();
 
-    // Reapply when this window gains focus (handles multi-window scenarios)
+    // Apply colour on focus, clear on blur — ensures non-active windows show default theme colours
     context.subscriptions.push(
         vscode.window.onDidChangeWindowState((state) => {
             if (state.focused) {
@@ -45,6 +46,8 @@ export function activate(context: vscode.ExtensionContext): void {
                 } else {
                     clearColour().catch(logError);
                 }
+            } else {
+                clearColour().catch(logError);
             }
         }),
     );
@@ -59,13 +62,14 @@ export function activate(context: vscode.ExtensionContext): void {
                 description: c.hex,
                 picked: c.hex === currentColour,
             }));
+            picks.push({ label: '$(paintcan) Colour picker…', description: '' });
             picks.push({ label: '$(edit) Custom hex colour…', description: '' });
             if (currentColour) {
                 picks.push({ label: '$(trash) Clear colour', description: '' });
             }
 
             const selection = await vscode.window.showQuickPick(picks, {
-                title: 'Kingfisher: Set Status Bar Colour',
+                title: 'Kingfisher: Set Colour',
                 placeHolder: 'Choose a colour or enter a custom hex value',
             });
 
@@ -75,6 +79,11 @@ export function activate(context: vscode.ExtensionContext): void {
 
             if (selection.label.startsWith('$(trash)')) {
                 await handleClearColour(context);
+                return;
+            }
+
+            if (selection.label.startsWith('$(paintcan)')) {
+                showColourPicker(context, currentColour, (hex) => persistAndApply(context, hex));
                 return;
             }
 

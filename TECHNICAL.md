@@ -24,8 +24,9 @@ Kingfisher writes only to `ConfigurationTarget.Global` (user settings).
 
 ```
 src/
-  extension.ts       — VS Code entry point (activate/deactivate)
-  ColourService.ts   — Pure utilities + vscode-dependent apply/persist functions
+  extension.ts          — VS Code entry point (activate/deactivate)
+  ColourService.ts      — Pure utilities + vscode-dependent apply/persist functions
+  ColourPickerPanel.ts  — WebviewPanel colour picker
   test/
     ColourService.test.ts   — Unit tests for pure utility functions
     __mocks__/
@@ -72,20 +73,39 @@ src/
 **`activate(context)`:**
 1. Creates a status bar item (left-aligned, low priority) bound to `kingfisher.setColour`
 2. Reads saved colour from `globalState` and applies it via `applyColour`
-3. Registers `onDidChangeWindowState` listener — reapplies the workspace colour on window focus gain
-4. Registers `kingfisher.setColour` command (QuickPick with presets + custom input + clear option)
+3. Registers `onDidChangeWindowState` listener:
+   - **Focus gain** → reapplies the workspace colour (or clears if none saved)
+   - **Focus loss** → calls `clearColour()` so unfocused windows revert to the theme default
+4. Registers `kingfisher.setColour` command (QuickPick with presets + colour picker + hex input + clear option)
 5. Registers `kingfisher.clearColour` command
 
 **`deactivate()`:**
 - Calls `clearColour()` to remove the written user settings keys
 
+### ColourPickerPanel.ts
+
+**`showColourPicker(context, currentColour, onApply)`:**
+- Opens a `WebviewPanel` (title: "Kingfisher: Colour Picker", `ViewColumn.Active`)
+- Generates a 16-byte nonce via Node's `crypto.randomBytes` for CSP
+- Renders minimal HTML with:
+  - `default-src 'none'` CSP with nonce-gated `style-src` and `script-src`
+  - `<input type="color">` pre-filled with the current colour (or `#1a6b8a` default)
+  - Hex label that updates live on `input` events
+  - Apply and Cancel buttons
+- On `apply` message: validates the received hex value (regex guard), disposes the panel, calls `onApply(hex)`
+- On `cancel` message or panel close: disposes with no changes
+- Colour embedded in HTML is sanitised with a regex before insertion (defence-in-depth)
+
 ### Multi-window Behaviour
 
-VS Code's user settings are global — all open windows share the same `workbench.colorCustomizations` value and react to it live. Kingfisher uses `onDidChangeWindowState` to reapply the *current window's* colour whenever that window gains focus. The result:
+VS Code's user settings are global — all open windows share the same `workbench.colorCustomizations` value and react to it live. Kingfisher uses `onDidChangeWindowState` to manage this:
 
-- The active/focused window always shows the correct colour
-- Other open windows reflect the most recently focused window's colour
-- This is a VS Code platform limitation; no extension API provides per-window colour isolation
+- **Window gains focus** → applies the saved colour for that workspace
+- **Window loses focus** → calls `clearColour()`, reverting to the theme default
+
+The effective result: the *active* VS Code window shows its colour; all other VS Code windows visible in Alt+Tab show the default theme colours. Switching to a VS Code window immediately applies its colour.
+
+This is an improvement over applying-on-focus-only (the previous approach), where all windows would share the colour of the last-focused window.
 
 ---
 

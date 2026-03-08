@@ -10,3 +10,9 @@ Thumbs.db
 
 # Publish package files
 *.vsix
+
+# Agents files
+
+agents/
+AGENTS.md
+

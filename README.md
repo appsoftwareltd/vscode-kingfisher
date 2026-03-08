@@ -17,12 +17,9 @@ A key requirement is to be able to identify windows by colour in `Alt + Tab`. If
 
 ---
 
-## How it works
+## Quick Demo
 
-Kingfisher stores colours in VS Code's internal extension storage (never version-controlled) and writes to your **personal user settings** only. The trade-off: `workbench.colorCustomizations` is a global setting, so only the **focused** window shows its colour at any given moment. When a window gains focus Kingfisher applies its colour; when it loses focus Kingfisher clears it back to your theme default.
-
-A **sidebar panel** also opens automatically on blur, showing the workspace colour as a full-height background — visible in Alt+Tab thumbnails even when the window is inactive. On refocus the sidebar closes and Explorer is restored.
-
+[![VS Code Kingfisher Demo](https://img.youtube.com/vi/fa4ZdYpHDFU/maxresdefault.jpg)](https://youtu.be/fa4ZdYpHDFU)
 
 
 ---
@@ -124,8 +121,8 @@ npx @vscode/vsce publish
 
 ```bash
 git add .
-git commit -m "Release v0.1.5   # change version
-git tag v0.1.5                  # change version
+git commit -m "Release v0.1.6"  # change version
+git tag v0.1.6                  # change version
 git push origin main --tags
 ```
 

@@ -60,7 +60,7 @@ src/
 | Function | Description |
 |---|---|
 | `applyColour(colour)` | Writes to `workbench.colorCustomizations` via `ConfigurationTarget.Global` |
-| `clearColour()` | Removes statusBar keys from `workbench.colorCustomizations`; removes the entire key if empty |
+| `clearColour()` | Removes Kingfisher keys from `workbench.colorCustomizations`; removes the entire key if empty. **No-op if no Kingfisher keys are present** (idempotency guard — avoids redundant `config.update()` calls during shutdown). |
 | `getSavedColour(globalState)` | Reads saved colour for current workspace from `globalState` keyed by workspace folder URI |
 | `saveColour(globalState, colour)` | Persists colour for current workspace to `globalState` |
 | `deleteSavedColour(globalState)` | Removes saved colour for current workspace from `globalState` |
@@ -80,7 +80,7 @@ src/
 6. Registers `kingfisher.clearColour` command
 
 **`deactivate()`:**
-- Calls `clearColour()` to remove the written user settings keys
+- Returns `Promise<void>` from `clearColour()` so VS Code can await the async settings write before shutdown. After blur has already cleared, `clearColour()` returns immediately (idempotency guard), so this is effectively a fast no-op on normal window close.
 
 ### ColourPickerPanel.ts
 
@@ -132,7 +132,7 @@ This is an improvement over applying-on-focus-only (the previous approach), wher
 - **vscode mock:** `src/test/__mocks__/vscode.ts` — aliased via `vitest.config.ts` `resolve.alias`
 - **Run:** `npm test`
 
-Only pure utility functions are unit tested. The vscode-dependent functions (`applyColour`, `clearColour`, `getSavedColour`, etc.) require integration with the VS Code host and are not unit tested.
+Pure utility functions and `clearColour` are unit tested. `clearColour` is tested via the VS Code mock to verify the idempotency guard (no `config.update()` call when no Kingfisher keys are present) and correct key removal. `applyColour`, `getSavedColour`, and other vscode-dependent functions require integration with the VS Code host and are not unit tested.
 
 ## TypeScript Configuration
 

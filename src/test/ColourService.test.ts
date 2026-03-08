@@ -1,10 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as vscode from 'vscode';
 import {
     isValidHex,
     getContrastColour,
     dimColour,
     buildColourCustomizations,
     removeColourCustomizations,
+    clearColour,
     WORKSPACE_COLOUR_KEY,
 } from '../ColourService.js';
 
@@ -163,5 +165,66 @@ describe('WORKSPACE_COLOUR_KEY', () => {
     it('is a non-empty string', () => {
         expect(typeof WORKSPACE_COLOUR_KEY).toBe('string');
         expect(WORKSPACE_COLOUR_KEY.length).toBeGreaterThan(0);
+    });
+});
+
+describe('clearColour', () => {
+    // The mock always returns the same workbenchConfig object from getConfiguration.
+    const mockConfig = vscode.workspace.getConfiguration('workbench');
+
+    beforeEach(() => {
+        vi.mocked(mockConfig.update).mockClear();
+    });
+
+    it('does not call config.update when colorCustomizations is empty', async () => {
+        vi.mocked(mockConfig.get).mockReturnValueOnce({});
+        await clearColour();
+        expect(mockConfig.update).not.toHaveBeenCalled();
+    });
+
+    it('does not call config.update when colorCustomizations is undefined', async () => {
+        vi.mocked(mockConfig.get).mockReturnValueOnce(undefined);
+        await clearColour();
+        expect(mockConfig.update).not.toHaveBeenCalled();
+    });
+
+    it('does not call config.update when only non-Kingfisher keys are present', async () => {
+        vi.mocked(mockConfig.get).mockReturnValueOnce({ 'editor.background': '#1e1e1e' });
+        await clearColour();
+        expect(mockConfig.update).not.toHaveBeenCalled();
+    });
+
+    it('calls config.update when a Kingfisher key is present', async () => {
+        vi.mocked(mockConfig.get).mockReturnValueOnce({ 'titleBar.activeBackground': '#ff6600' });
+        await clearColour();
+        expect(mockConfig.update).toHaveBeenCalledOnce();
+    });
+
+    it('removes Kingfisher keys and preserves other keys', async () => {
+        vi.mocked(mockConfig.get).mockReturnValueOnce({
+            'titleBar.activeBackground': '#ff6600',
+            'editor.background': '#1e1e1e',
+        });
+        await clearColour();
+        expect(mockConfig.update).toHaveBeenCalledWith(
+            'colorCustomizations',
+            { 'editor.background': '#1e1e1e' },
+            vscode.ConfigurationTarget.Global,
+        );
+    });
+
+    it('writes undefined when only Kingfisher keys remain', async () => {
+        vi.mocked(mockConfig.get).mockReturnValueOnce({
+            'titleBar.activeBackground': '#ff6600',
+            'titleBar.activeForeground': '#000000',
+            'titleBar.inactiveBackground': '#cc7a33',
+            'titleBar.inactiveForeground': '#000000',
+        });
+        await clearColour();
+        expect(mockConfig.update).toHaveBeenCalledWith(
+            'colorCustomizations',
+            undefined,
+            vscode.ConfigurationTarget.Global,
+        );
     });
 });

@@ -106,6 +106,15 @@ export async function applyColour(colour: string): Promise<void> {
 export async function clearColour(): Promise<void> {
     const config = vscode.workspace.getConfiguration('workbench');
     const existing = config.get<Record<string, string>>('colorCustomizations') ?? {};
+
+    // No-op guard: if none of our keys are present, skip the write entirely.
+    // This prevents redundant config.update() calls (e.g. deactivate after blur has
+    // already cleared) which can leave settings.json open/dirty on shutdown.
+    const hasKingfisherKeys = KINGFISHER_KEYS.some((k) => k in existing);
+    if (!hasKingfisherKeys) {
+        return;
+    }
+
     const updated = removeColourCustomizations(existing);
 
     // If nothing remains, write undefined to clean the key from settings.json

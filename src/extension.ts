@@ -150,9 +150,10 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 }
 
-export function deactivate(): void {
-    // Clear the applied colour from user settings so it doesn't persist after deactivation
-    clearColour().catch(logError);
+export function deactivate(): Promise<void> {
+    // Clear the applied colour from user settings so it doesn't persist after deactivation.
+    // Returning the Promise allows VS Code to await the async write before shutdown.
+    return clearColour().catch(() => undefined);
 }
 
 async function handleCustomColour(

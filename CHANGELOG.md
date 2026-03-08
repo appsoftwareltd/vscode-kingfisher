@@ -6,6 +6,12 @@ All notable changes to AS Notes will be documented here.
 
 ### Added
 
+## [0.1.8] - 2026-03-08
+
+### Added
+
+- Fixed shutdown issue that left open / conflicted settings.json open.
+
 ## [0.1.7] - 2026-03-07
 
 ### Added

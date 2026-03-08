@@ -11,18 +11,18 @@ import {
 } from './ColourService.js';
 
 const PREDEFINED_COLOURS: Array<{ label: string; hex: string }> = [
-    { label: '$(circle-filled) Rose', hex: '#f4a6a0' },
-    { label: '$(circle-filled) Blush', hex: '#f0b6c1' },
-    { label: '$(circle-filled) Peach', hex: '#f7c5a0' },
-    { label: '$(circle-filled) Buttercup', hex: '#f5e6a3' },
-    { label: '$(circle-filled) Pistachio', hex: '#c8e6a0' },
-    { label: '$(circle-filled) Mint', hex: '#a8e6cf' },
-    { label: '$(circle-filled) Sky', hex: '#a0d2e6' },
-    { label: '$(circle-filled) Periwinkle', hex: '#a8b8e6' },
-    { label: '$(circle-filled) Lavender', hex: '#c4b0e6' },
-    { label: '$(circle-filled) Lilac', hex: '#d8a8e6' },
-    { label: '$(circle-filled) Sage', hex: '#b0c4a8' },
-    { label: '$(circle-filled) Oat', hex: '#e0d4c0' },
+    { label: '$(circle-filled) Yellow', hex: '#f7e898' },
+    { label: '$(circle-filled) Amber', hex: '#f5c468' },
+    { label: '$(circle-filled) Orange', hex: '#f09358' },
+    { label: '$(circle-filled) Coral', hex: '#f07868' },
+    { label: '$(circle-filled) Rose', hex: '#f07080' },
+    { label: '$(circle-filled) Pink', hex: '#f090b0' },
+    { label: '$(circle-filled) Mauve', hex: '#d8a0c0' },
+    { label: '$(circle-filled) Purple', hex: '#8888c4' },
+    { label: '$(circle-filled) Blue', hex: '#90bcd8' },
+    { label: '$(circle-filled) Teal', hex: '#88c8c0' },
+    { label: '$(circle-filled) Green', hex: '#90c890' },
+    { label: '$(circle-filled) Lime', hex: '#bcd880' },
 ];
 
 let statusBarItem: vscode.StatusBarItem | undefined;

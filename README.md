@@ -33,7 +33,7 @@ A key requirement is to be able to identify windows by colour in `Alt + Tab`. If
 
 Open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and search for "Kingfisher".
 
-You can also click the Kingfisher indicator in the status bar to open the colour picker.
+You can also click the Kingfisher indicator in the status bar to open the Set Title Bar Colour menu.
 
 ### Sidebar panel
 
@@ -121,8 +121,8 @@ npx @vscode/vsce publish
 
 ```bash
 git add .
-git commit -m "Release v0.1.6"  # change version
-git tag v0.1.6                  # change version
+git commit -m "Release v0.1.7"  # change version
+git tag v0.1.7                  # change version
 git push origin main --tags
 ```
 

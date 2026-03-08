@@ -2,7 +2,7 @@
     "name": "vscode-kingfisher",
     "displayName": "VS Code Kingfisher",
     "description": "Subtly colour your VS Code title bar per workspace — just for you. Identify multiple VS Code windows at a glance without polluting shared settings.",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "publisher": "appsoftwareltd",
     "license": "Elastic-2.0",
     "icon": "images/kingfisher-icon-128x128.png",

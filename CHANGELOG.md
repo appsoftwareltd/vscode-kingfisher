@@ -6,6 +6,13 @@ All notable changes to AS Notes will be documented here.
 
 ### Added
 
+## [0.1.7] - 2026-03-07
+
+### Added
+
+- Updated colour pallet
+- Side bar colour technique for `Alt + Tab` visibility.
+
 ## [0.1.4] - 2026-03-07
 
 ### Added

@@ -367,4 +367,154 @@ This is a one-line change to the event handler with no architectural changes.
 - `extension.ts`: Add `$(paintcan) Colour picker…` QuickPick option (between presets and hex input), handled by calling `showColourPicker`. The existing hex input box is retained unchanged. Both converge on `persistAndApply`.
 - No changes to `ColourService.ts` or existing tests.
 
-[user]: 
+[user]: Is there another approach? We just need something on the VS Code instance UI when it is not active for the Alt Tab scenario with the colour configiured by the extension? A temporary focued editor pane - something like that any ideas?
+
+[agent]: Yes — there's a genuinely viable approach here that sidesteps the global-settings limitation entirely: a **Sidebar WebviewView**.
+
+**Why this works:**  
+`vscode.window.registerWebviewViewProvider` registers a view in the VS Code sidebar. Each VS Code window has its own extension instance that independently controls its own webview content. The webview HTML/CSS is *not* shared between windows — each window renders its own. So window A's sidebar can show red, and window B's sidebar can show blue, simultaneously, with no global settings involved.
+
+**What it looks like:**  
+A panel in the sidebar (similar to the Explorer, Source Control, or Extensions panel) with its configured Kingfisher colour as the background. It could be a slim strip with a colour swatch and workspace label — enough to be visible in Alt+Tab thumbnails.
+
+**How it integrates with the existing approach:**  
+The two approaches would be complementary — the existing `workbench.colorCustomizations` focus/blur mechanism still runs and colours the title bar and status bar when the window is active. The WebviewView provides the always-on, per-window, simultaneously-visible colour indicator for Alt+Tab.
+
+**Trade-offs:**
+- The user needs to have the Kingfisher panel open/visible in their sidebar. This is a one-time setup (pin it to the sidebar).
+- Adds a WebviewViewProvider registration and a webview update mechanism when the colour changes.
+- If the sidebar is closed or the Kingfisher panel is collapsed, it won't be visible in Alt+Tab.
+
+**Alternative: custom editor tab (more intrusive)**  
+Opening a webview "editor" (like a custom document tab) would be visible in the editor area — but it would take up tab space and be uninvited, which is not ideal UX.
+
+**Recommendation:**  
+Implement the sidebar WebviewView as an *optional companion* to the current approach:
+- Register `KingfisherSidebarView` in the activity bar / sidebar
+- It renders a full-height div with the workspace colour as background, plus a small label ("Kingfisher — #1a6b8a")  
+- The colour updates live when the user changes it via the command
+- Users can pin it open; it shows in Alt+Tab
+
+This would require:
+- `package.json` — register `viewsContainers` (activitybar item) and `views` for the Kingfisher container
+- New `src/KingfisherSidebarView.ts` — implements `WebviewViewProvider`, renders coloured HTML, exposes `updateColour(hex)` method
+- `extension.ts` — register the provider, call `updateColour` in `persistAndApply` and `handleClearColour`
+
+Shall I plan this out and add it to the todo list?
+
+[user]: Yes
+
+[agent]: Plan for Iteration 4 — Sidebar WebviewView:
+
+- `package.json` — add `viewsContainers` (activity bar item with a kingfisher icon) and `views` (one view `kingfisher.sidebarView` inside that container). This causes VS Code to show a Kingfisher icon in the activity bar that opens the sidebar panel.
+- `src/KingfisherSidebarView.ts` — implements `vscode.WebviewViewProvider`. The `resolveWebviewView` method renders a full-height HTML page with the current colour as the background, a workspace name label, and the hex value. Exposes `updateColour(hex | undefined)` which posts a message to the webview to update its background live. Uses a nonce-based CSP (same pattern as `ColourPickerPanel.ts`).
+- `extension.ts` — instantiate `KingfisherSidebarView`, register it via `vscode.window.registerWebviewViewProvider`. Call `sidebarView.updateColour(hex)` in `persistAndApply` and `handleClearColour`. Also call it on activation with the saved colour.
+- Activity bar icon: use the SVG `$(kingfisher)` codicon if available, or a simple circle SVG inline. A minimal SVG icon file `images/kingfisher-sidebar.svg` will be created and referenced in `package.json`.
+
+[user]: The sidebar doesn't disappear when I alt tab back to the vscode instance
+
+[agent]: Implemented. On window blur (inactive), Kingfisher opens the sidebar so the workspace colour is visible in Alt+Tab. On window focus (active), Kingfisher reverses this — but restores the sidebar state to what it was before:
+
+- If the sidebar had **another view** open (Explorer, SCM, etc.) before Kingfisher stole it → keyboard focus returns to the editor, the sidebar stays open with that view still showing. The user is not disrupted.
+- If the sidebar was **closed** before → `closeSidebar` is called to restore the clean no-sidebar state.
+
+This is tracked with three flags:
+- `sidebarOpenedByKingfisher` — whether we were the ones who opened it on blur
+- `sidebarHadOtherView` — whether the user navigated away from our panel to another view during the focused period (meaning something else was there)
+- `suppressNextVisibilityHide` — prevents the `closeSidebar` command itself from triggering `sidebarHadOtherView = true` via the visibility change event
+
+`KingfisherSidebarView` exposes `isVisible` (getter) and `onVisibilityChange` callback to allow `extension.ts` to observe panel visibility without the two classes being tightly coupled.
+
+If Kingfisher is already showing in the sidebar when blur fires, it does not re-open (no-op).
+
+[user]: No, its not working. When the vscode instance becomes active again, the sidebar doesn't hide
+
+[agent]: Root cause identified. The blur logic only sets `sidebarOpenedByKingfisher = true` when Kingfisher is *not* already visible (`!sidebarView?.isVisible`). If the user had the Kingfisher panel already open when the window blurred, the flag was never set — so on focus we skip the close block entirely.
+
+Also removing the `sidebarHadOtherView` / `suppressNextVisibilityHide` complexity. That mechanism was designed to detect "something else was showing before blur" by watching for the user navigating *away from Kingfisher during the focused period* — but it can't detect the more common case where Explorer was open *before* blur (VS Code gives no API to query the active viewlet of another container). The complexity doesn't deliver its stated promise and introduces bugs.
+
+**Simplified design:**
+- On blur: if colour set → `sidebarOpenedByKingfisher = true` (always); if Kingfisher not already visible → open it
+- On focus: if `sidebarOpenedByKingfisher` → close sidebar, reset flag
+- Side-effect: if Explorer was open before blur it will also be closed on focus (VS Code API limitation — no way to restore a previous viewlet without knowing what it was)
+
+[user]: It hides the side bar on re-focus, but it doesn't restore the bar that was there before loss of focus
+
+[agent]: This is a genuine VS Code API limitation. There is no public API to query which view container (Explorer, Source Control, Extensions, etc.) was active in the sidebar before Kingfisher stole it. The extension can see if *its own* view is visible (`WebviewView.visible`) and react to *its own* visibility changes (`onDidChangeVisibility`), but it cannot read the sidebar's broader state.
+
+Two practical options:
+
+**Option A — Close the sidebar on focus (current behaviour)**
+- Correct when the sidebar was closed before blur (restores clean state)
+- Disruptive when Explorer/SCM/other was open — user has to click the activity bar icon to reopen it
+
+**Option B — Only return keyboard focus to the editor on focus (`focusActiveEditorGroup`)**
+- Sidebar stays open and still shows the Kingfisher panel
+- Not disruptive if something else was open — nothing was closed or lost
+- Downside: the Kingfisher panel stays visible; user has to click their preferred activity bar icon to switch back
+- If the sidebar was closed before blur, it now stays open showing Kingfisher — user has to close it manually
+
+Neither option is perfect. Option B is generally less disruptive because clicking an activity bar icon to restore your panel is less effort than reopening a closed sidebar and then navigating back to your file tree.
+
+We could also combine: use `onDidChangeVisibility` during the focused period to track whether the user ever navigated away from Kingfisher to another panel. If they did (`sidebarState = 'other'`), use Option B on focus restore. If Kingfisher was showing the whole time, close the sidebar (Option A). The initial state (Kingfisher never opened this session) defaults to Option B (safer).
+
+What is your preference?
+
+[user]: Is there something else that can be coloured instead? Like all editor tab handles?
+
+[agent]: The tab bar background (`editorGroupHeader.tabsBackground`) and individual tab colours (`tab.activeBackground`, `tab.inactiveBackground`) are available via `workbench.colorCustomizations` — but they share the same global settings problem. All open VS Code windows would be updated simultaneously, just like the title bar and status bar. They wouldn't give independent per-window colour in Alt+Tab.
+
+The fundamental constraint is: **only WebviewView content is rendered independently per-window**. Everything else in the VS Code UI is driven by settings that are shared at the global level. There is no other extension API that allows per-window visual differentiation.
+
+So the options remain:
+
+1. **Keep the sidebar WebviewView approach** — the only mechanism for true per-window colour in Alt+Tab. Accept the sidebar disruption, or accept Option B (`focusActiveEditorGroup`) where the sidebar is left open on focus restore.
+
+2. **Abandon the "always-on Alt+Tab indicator" goal entirely** — just use the title bar and status bar colouring that already works. The colour snaps in the instant a window gains focus, so "is this the right window?" is answered as soon as you switch to it — you don't need to see it *before* clicking. For most workflows this is sufficient.
+
+3. **Hybrid with Option B** — on focus restore, just call `focusActiveEditorGroup` (return keyboard focus to the editor) without closing the sidebar. The Kingfisher panel stays open and the user clicks their activity bar icon to get back to Explorer. This is the least disruptive option.
+
+Honestly, Option 2 (drop the sidebar, rely on title/status bar snap-on focus) may be the most practical. The sidebar mechanism is fighting VS Code's UX conventions — VS Code doesn't expect extensions to open and close the sidebar on window focus events. The title bar is already a large, visible, coloured element, and the colour appears immediately on window activation.
+
+What matters more to you: seeing the colour *before* clicking the window in Alt+Tab, or having a clean sidebar experience?
+
+[user]: I really need something to show on alt tab
+
+[agent]: Understood — that's a firm requirement. The sidebar WebviewView is the only mechanism that renders independently per-window, so it stays. The question is purely about how to restore the sidebar on focus.
+
+Let's go with **Option B — `focusActiveEditorGroup`** on focus restore. The behaviour:
+
+- **Blur:** Kingfisher opens its sidebar panel (if not already visible). The workspace colour fills the sidebar and is visible in Alt+Tab thumbnails.
+- **Focus:** Keyboard focus returns to the editor via `focusActiveEditorGroup`. The sidebar stays open showing the Kingfisher panel. The user clicks their preferred activity bar icon (Explorer, SCM, etc.) to switch back — a single click.
+
+Why this is the best of the available options:
+- Nothing the user had open is lost or closed
+- If the sidebar was already closed, it was opened by Kingfisher and stays showing Kingfisher (not harmful — user can close it or ignore it)
+- The user's previous activity bar selection is remembered by VS Code — one click to restore
+- No complex state tracking needed
+
+The sidebar panel stays persistent in the activity bar regardless — it's always there for the user to click. The cost is one extra click to get back to Explorer after Alt+Tabbing, which is minimal.
+
+Shall I implement this?
+
+[user]: What if we don't try to remember the last side bar used, and just open explorer on refocus, since that is the most likely 
+
+[agent]: Simple and pragmatic. The command `workbench.view.explorer` opens the Explorer sidebar and gives it keyboard focus. We'd follow it with `workbench.action.focusActiveEditorGroup` to return keyboard focus to the editor, so the user isn't left focused on the file tree.
+
+The behaviour:
+- **Blur:** Kingfisher opens its sidebar panel (colour visible in Alt+Tab)
+- **Focus:** Run `workbench.view.explorer` then `workbench.action.focusActiveEditorGroup` — Explorer is restored, focus is on the editor
+
+This handles the majority case cleanly. Users who primarily use SCM or Search in their sidebar will get Explorer instead — but for most developers, Explorer is the default. 
+
+One consideration: if the sidebar was *closed* before blur, this will *open* Explorer on focus (sidebar wasn't open before, now it is). We could track whether the sidebar was closed before blur using `sidebarView.isVisible` — if it was not visible, it means either the sidebar was closed or another panel was showing. Actually that only tells us about *our* panel's visibility, not whether the sidebar was open at all. There's no API for that either.
+
+Simplest path: always open Explorer on focus. If the user had the sidebar closed, they close it again — but this is the expected minority case and easily reversed with `Ctrl+B`.
+
+Shall I implement?
+
+[user]: todo implement
+
+[agent]: Implemented. On focus restore, replaced `workbench.action.closeSidebar` with `workbench.view.explorer` → `workbench.action.focusActiveEditorGroup`. The Explorer sidebar is restored and keyboard focus returns to the editor. Lint and build clean.
+
+[user]: That works really well

@@ -26,8 +26,7 @@ Kingfisher writes only to `ConfigurationTarget.Global` (user settings).
 src/
   extension.ts          — VS Code entry point (activate/deactivate)
   ColourService.ts      — Pure utilities + vscode-dependent apply/persist functions
-  ColourPickerPanel.ts  — WebviewPanel colour picker
-  test/
+  ColourPickerPanel.ts  — WebviewPanel colour picker  KingfisherSidebarView.ts — WebviewViewProvider sidebar panel (always-on per-window colour)  test/
     ColourService.test.ts   — Unit tests for pure utility functions
     __mocks__/
       vscode.ts             — Vitest mock for the vscode module
@@ -71,13 +70,14 @@ src/
 ### extension.ts
 
 **`activate(context)`:**
-1. Creates a status bar item (left-aligned, low priority) bound to `kingfisher.setColour`
-2. Reads saved colour from `globalState` and applies it via `applyColour`
-3. Registers `onDidChangeWindowState` listener:
+1. Instantiates `KingfisherSidebarView` and registers it via `vscode.window.registerWebviewViewProvider`
+2. Creates a status bar item (left-aligned, low priority) bound to `kingfisher.setColour`
+3. Reads saved colour from `globalState`, applies via `applyColour`, and calls `sidebarView.updateColour`
+4. Registers `onDidChangeWindowState` listener:
    - **Focus gain** → reapplies the workspace colour (or clears if none saved)
    - **Focus loss** → calls `clearColour()` so unfocused windows revert to the theme default
-4. Registers `kingfisher.setColour` command (QuickPick with presets + colour picker + hex input + clear option)
-5. Registers `kingfisher.clearColour` command
+5. Registers `kingfisher.setColour` command (QuickPick with presets + colour picker + hex input + clear option)
+6. Registers `kingfisher.clearColour` command
 
 **`deactivate()`:**
 - Calls `clearColour()` to remove the written user settings keys
@@ -95,6 +95,15 @@ src/
 - On `apply` message: validates the received hex value (regex guard), disposes the panel, calls `onApply(hex)`
 - On `cancel` message or panel close: disposes with no changes
 - Colour embedded in HTML is sanitised with a regex before insertion (defence-in-depth)
+
+### KingfisherSidebarView.ts
+
+**`class KingfisherSidebarView implements vscode.WebviewViewProvider`**
+- Registered against view ID `kingfisher.sidebarView` (declared in `package.json` `views.kingfisher`)
+- `resolveWebviewView(webviewView)`: called by VS Code when the panel is first opened. Sets `enableScripts: true`, stores a reference to the webview view, renders initial HTML.
+- Initial HTML: full-height page with the current colour as `background-color`, a circle swatch, hex label, and a "No colour set" fallback. Uses nonce-based CSP (`default-src 'none'`).
+- `updateColour(hex | undefined)`: posts `{ command: 'updateColour', colour }` to the webview. The webview JS listener updates `body.style.backgroundColor` and label text in-place — no full re-render, no visible flash.
+- Because each VS Code window has its own extension instance and its own webview, this panel shows the correct workspace colour **simultaneously and independently** in every open window. This is the mechanism for true per-window Alt+Tab colouring without any shared settings file.
 
 ### Multi-window Behaviour
 

@@ -83,8 +83,8 @@ describe('buildColourCustomizations', () => {
         const existing = { 'editor.background': '#1e1e1e' };
         const result = buildColourCustomizations(existing, '#ff6600');
         expect(result['editor.background']).toBe('#1e1e1e');
-        expect(result['statusBar.background']).toBe('#ff6600');
-        expect(result['statusBar.foreground']).toBe('#000000');
+        expect(result['titleBar.activeBackground']).toBe('#ff6600');
+        expect(result['titleBar.activeForeground']).toBe('#000000');
     });
 
     it('sets title bar active background to the chosen colour', () => {
@@ -110,17 +110,17 @@ describe('buildColourCustomizations', () => {
         expect(result['titleBar.inactiveForeground']).toBe(getContrastColour(inactive));
     });
 
-    it('overwrites existing statusBar keys', () => {
-        const existing = { 'statusBar.background': '#0000ff', 'statusBar.foreground': '#ffffff' };
+    it('overwrites existing title bar keys', () => {
+        const existing = { 'titleBar.activeBackground': '#0000ff', 'titleBar.activeForeground': '#ffffff' };
         const result = buildColourCustomizations(existing, '#ffff00');
-        expect(result['statusBar.background']).toBe('#ffff00');
-        expect(result['statusBar.foreground']).toBe('#000000');
+        expect(result['titleBar.activeBackground']).toBe('#ffff00');
+        expect(result['titleBar.activeForeground']).toBe('#000000');
     });
 
     it('does not mutate the input object', () => {
         const existing = { 'editor.background': '#1e1e1e' };
         buildColourCustomizations(existing, '#ff6600');
-        expect(existing).not.toHaveProperty('statusBar.background');
+        expect(existing).not.toHaveProperty('titleBar.activeBackground');
     });
 });
 
@@ -128,16 +128,12 @@ describe('removeColourCustomizations', () => {
     it('removes all kingfisher keys and preserves others', () => {
         const existing = {
             'editor.background': '#1e1e1e',
-            'statusBar.background': '#ff6600',
-            'statusBar.foreground': '#000000',
             'titleBar.activeBackground': '#ff6600',
             'titleBar.activeForeground': '#000000',
             'titleBar.inactiveBackground': '#cc7a33',
             'titleBar.inactiveForeground': '#000000',
         };
         const result = removeColourCustomizations(existing);
-        expect(result).not.toHaveProperty('statusBar.background');
-        expect(result).not.toHaveProperty('statusBar.foreground');
         expect(result).not.toHaveProperty('titleBar.activeBackground');
         expect(result).not.toHaveProperty('titleBar.activeForeground');
         expect(result).not.toHaveProperty('titleBar.inactiveBackground');
@@ -147,8 +143,6 @@ describe('removeColourCustomizations', () => {
 
     it('returns empty object when only kingfisher keys exist', () => {
         const existing = {
-            'statusBar.background': '#ff6600',
-            'statusBar.foreground': '#000000',
             'titleBar.activeBackground': '#ff6600',
             'titleBar.activeForeground': '#000000',
             'titleBar.inactiveBackground': '#cc7a33',
@@ -159,9 +153,9 @@ describe('removeColourCustomizations', () => {
     });
 
     it('does not mutate the input object', () => {
-        const existing = { 'statusBar.background': '#ff6600' };
+        const existing = { 'titleBar.activeBackground': '#ff6600' };
         removeColourCustomizations(existing);
-        expect(existing).toHaveProperty('statusBar.background');
+        expect(existing).toHaveProperty('titleBar.activeBackground');
     });
 });
 

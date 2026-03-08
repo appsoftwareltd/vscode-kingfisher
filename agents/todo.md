@@ -25,3 +25,12 @@
 - [x] Add $(paintcan) Colour picker option to QuickPick in extension.ts
 - [x] Verify build and all tests pass
 - [x] Update README.md and TECHNICAL.md
+
+## Iteration 4 — Sidebar WebviewView (always-on per-window colour)
+
+- [x] Create images/kingfisher-sidebar.svg activity bar icon
+- [x] Add viewsContainers + views to package.json
+- [x] Create src/KingfisherSidebarView.ts (WebviewViewProvider, nonce CSP, updateColour)
+- [x] Wire KingfisherSidebarView into extension.ts (register, call updateColour on change)
+- [x] Verify build and all tests pass
+- [x] Update README.md and TECHNICAL.md

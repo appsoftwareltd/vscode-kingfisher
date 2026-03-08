@@ -2,16 +2,12 @@ import * as vscode from 'vscode';
 
 export const WORKSPACE_COLOUR_KEY = 'kingfisher.statusBarColour';
 
-const STATUS_BAR_BACKGROUND = 'statusBar.background';
-const STATUS_BAR_FOREGROUND = 'statusBar.foreground';
 const TITLE_BAR_ACTIVE_BACKGROUND = 'titleBar.activeBackground';
 const TITLE_BAR_ACTIVE_FOREGROUND = 'titleBar.activeForeground';
 const TITLE_BAR_INACTIVE_BACKGROUND = 'titleBar.inactiveBackground';
 const TITLE_BAR_INACTIVE_FOREGROUND = 'titleBar.inactiveForeground';
 
 const KINGFISHER_KEYS = [
-    STATUS_BAR_BACKGROUND,
-    STATUS_BAR_FOREGROUND,
     TITLE_BAR_ACTIVE_BACKGROUND,
     TITLE_BAR_ACTIVE_FOREGROUND,
     TITLE_BAR_INACTIVE_BACKGROUND,
@@ -66,7 +62,7 @@ export function dimColour(hex: string, factor = 0.35): string {
 
 /**
  * Returns a new colorCustomizations object with all Kingfisher keys merged in.
- * Covers status bar and title bar. Does not mutate the input.
+ * Covers the title bar. Does not mutate the input.
  */
 export function buildColourCustomizations(
     existing: Record<string, string>,
@@ -77,8 +73,6 @@ export function buildColourCustomizations(
     const contrastInactive = getContrastColour(inactiveColour);
     return {
         ...existing,
-        [STATUS_BAR_BACKGROUND]: colour,
-        [STATUS_BAR_FOREGROUND]: contrastActive,
         [TITLE_BAR_ACTIVE_BACKGROUND]: colour,
         [TITLE_BAR_ACTIVE_FOREGROUND]: contrastActive,
         [TITLE_BAR_INACTIVE_BACKGROUND]: inactiveColour,
@@ -108,7 +102,7 @@ export async function applyColour(colour: string): Promise<void> {
     await config.update('colorCustomizations', updated, vscode.ConfigurationTarget.Global);
 }
 
-/** Removes Kingfisher's statusBar keys from workbench.colorCustomizations in user settings. */
+/** Removes Kingfisher's title bar keys from workbench.colorCustomizations in user settings. */
 export async function clearColour(): Promise<void> {
     const config = vscode.workspace.getConfiguration('workbench');
     const existing = config.get<Record<string, string>>('colorCustomizations') ?? {};

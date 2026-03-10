@@ -2,6 +2,8 @@
 
 [VS Code Kingfisher on VS Marketplace](https://marketplace.visualstudio.com/items?itemName=AppSoftwareLtd.vscode-kingfisher)
 
+By [appsoftware.com](http://www.appsoftware.com)
+
 > Colour your VS Code title bar per workspace — **without touching `.vscode/settings.json`**. Ideal when you have multiple VS Code instances and don't want to share personal colour preferences with the whole team.
 
 Inspired by [vscode-peacock](https://github.com/johnpapa/vscode-peacock), but Peacock can only work by modifying the workspace `.vscode/settings.json` ([issue](https://github.com/johnpapa/vscode-peacock/issues/7)). Teams often share that file, so personal colour preferences don't belong there.

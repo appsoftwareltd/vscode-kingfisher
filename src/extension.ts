@@ -6,9 +6,16 @@ import {
     applyColour,
     clearColour,
     getSavedColour,
+    getSavedColours,
     saveColour,
     deleteSavedColour,
 } from './ColourService.js';
+
+function hashString(s: string): number {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+    return h >>> 0;
+}
 
 const PREDEFINED_COLOURS: Array<{ label: string; hex: string }> = [
     { label: '$(circle-filled) Yellow', hex: '#f7e898' },
@@ -30,6 +37,15 @@ let sidebarView: KingfisherSidebarView | undefined;
 // True when Kingfisher was showing in the sidebar when this window last blurred.
 // Used to decide whether to close the sidebar on focus restore.
 let sidebarOpenedByKingfisher = false;
+
+/** Picks a predefined color, preferably one not already in use. */
+function determineHex(workspacePath: string, hexesInUse: string[]) {
+    const predefinedHexes = PREDEFINED_COLOURS.map((c) => c.hex);
+    const unusedHexes = predefinedHexes.filter((c) => !hexesInUse.includes(c));
+    const availableHexes = unusedHexes.length > 0 ? unusedHexes : predefinedHexes;
+    const index = hashString(workspacePath) % availableHexes.length;
+    return availableHexes[index];
+}
 
 export function activate(context: vscode.ExtensionContext): void {
     // Read saved colour first so it is set on the sidebar view before VS Code
@@ -56,6 +72,17 @@ export function activate(context: vscode.ExtensionContext): void {
     if (saved) {
         applyColour(saved).catch(logError);
         updateStatusBarItem(saved);
+    } else {
+        const resource = vscode.workspace.workspaceFolders?.[0]?.uri;
+        const isAutoAssignEnabled = vscode.workspace.getConfiguration('kingfisher', resource)
+            .get<boolean>('autoAssignColour', true);
+        if (isAutoAssignEnabled) {
+            const workspacePath = resource?.fsPath ?? '';
+            const hexesInUse = Object.entries(getSavedColours(context.globalState))
+                .map( ([, hex]) => hex );
+            const chosenHex = determineHex(workspacePath, hexesInUse);
+            persistAndApply(context, chosenHex).catch(logError);
+        }
     }
     statusBarItem.show();
 

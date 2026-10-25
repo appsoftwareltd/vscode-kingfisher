@@ -128,8 +128,13 @@ export function getSavedColour(globalState: vscode.Memento): string | undefined 
     if (!workspaceUri) {
         return undefined;
     }
-    const map = globalState.get<Record<string, string>>(WORKSPACE_COLOUR_KEY) ?? {};
+    const map = getSavedColours(globalState);
     return map[workspaceUri];
+}
+
+/** Returns the colours saved for all workspaces. */
+export function getSavedColours(globalState: vscode.Memento): Record<string, string> {
+    return globalState.get<Record<string, string>>(WORKSPACE_COLOUR_KEY) ?? {};
 }
 
 /** Saves a colour for the current workspace to globalState. */

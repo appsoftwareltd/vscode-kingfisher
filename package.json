@@ -2,7 +2,7 @@
     "name": "vscode-kingfisher",
     "displayName": "VS Code Kingfisher",
     "description": "Subtly colour your VS Code title bar per workspace — just for you. Identify multiple VS Code windows at a glance without polluting shared settings.",
-    "version": "0.1.8",
+    "version": "0.2.0",
     "publisher": "appsoftwareltd",
     "license": "Elastic-2.0",
     "icon": "images/kingfisher-icon-128x128.png",
@@ -55,6 +55,16 @@
                 }
             ]
         },
+        "configuration": {
+            "title": "Kingfisher",
+            "properties": {
+                "kingfisher.autoAssignColour": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically assign a random colour to a workspace when none has been set."
+                }
+            }
+        },
         "commands": [
             {
                 "command": "kingfisher.setColour",
@@ -77,8 +87,8 @@
     "devDependencies": {
         "@types/node": "^20.11.0",
         "@types/vscode": "^1.85.0",
-        "esbuild": "^0.24.0",
+        "esbuild": "^0.28.2",
         "typescript": "^5.7.0",
-        "vitest": "^3.0.0"
+        "vitest": "^5.0.5"
     }
 }
